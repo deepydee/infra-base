@@ -31,14 +31,14 @@
       - python3-venv # For Ansible pip modules
     state: present
 
-# Swap Configuration (4GB)
+# Swap Configuration (8GB)
 - name: Check if swap file exists
   stat:
     path: /swapfile
   register: swap_file_check
 
 - name: Create swap file
-  command: fallocate -l 4G /swapfile
+  command: fallocate -l 8G /swapfile
   when: not swap_file_check.stat.exists
 
 - name: Set permissions on swap file
@@ -67,3 +67,12 @@
     name: vm.swappiness
     value: '10'
     state: present
+
+# Cleanup
+- name: Remove useless packages from the cache
+  apt:
+    autoclean: yes
+
+- name: Remove dependencies that are no longer needed
+  apt:
+    autoremove: yes
