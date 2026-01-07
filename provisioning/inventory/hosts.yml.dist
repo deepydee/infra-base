@@ -1,0 +1,10 @@
+all:
+  hosts:
+    dev-server:
+      ansible_host: 1.2.3.4  # ЗАМЕНИ НА IP СВОЕГО СЕРВЕРА
+      # ansible_ssh_pass: "your_password_here" # Раскомментируй для первого запуска bootstrap, если нет ключа
+      # ansible_user: root # Для bootstrap обычно root
+
+  vars:
+    # Эти переменные переопределяют дефолтные значения ролей
+    ansible_python_interpreter: /usr/bin/python3

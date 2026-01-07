@@ -1,12 +1,12 @@
 ---
 # System Settings
-hostname: "saas4u.dev"
+hostname: "example.com"
 timezone: "UTC"
 create_user: "deploy" # Пользователь, под которым будем работать дальше
 create_user_key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}" # Твой локальный публичный ключ
 
 # Security Settings
-ssh_port: 15022
+ssh_port: 22
 ansible_port: "{{ ssh_port }}"
 ansible_user: "{{ create_user }}"
 allowed_ssh_users:
@@ -14,8 +14,8 @@ allowed_ssh_users:
   - "root" # Оставим root пока не убедимся, что deploy работает, но с запретом пароля
 
 # Traefik / Domain Settings
-domain_root: "saas4u.dev"
-email_admin: "admin@saas4u.dev" # Для Let's Encrypt
+domain_root: "example.com"
+email_admin: "admin@example.com" # Для Let's Encrypt
 
 # Docker Settings
 docker_compose_version: "v2.24.5"
