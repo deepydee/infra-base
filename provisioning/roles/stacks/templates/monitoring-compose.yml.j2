@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   grafana:
     image: grafana/grafana:latest
@@ -61,6 +63,32 @@ services:
     deploy:
       mode: global
 
+  loki:
+    image: grafana/loki:2.9.2
+    command: -config.file=/etc/loki/loki-config.yaml
+    volumes:
+      - ./loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      - loki_data:/loki
+    networks:
+      - monitoring-net
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.role == manager]
+
+  promtail:
+    image: grafana/promtail:2.9.2
+    command: -config.file=/etc/promtail/promtail-config.yaml
+    volumes:
+      - ./promtail-config.yaml:/etc/promtail/promtail-config.yaml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    networks:
+      - monitoring-net
+    deploy:
+      mode: global
+
 networks:
   traefik-public:
     external: true
@@ -71,3 +99,4 @@ networks:
 volumes:
   grafana_data:
   prometheus_data:
+  loki_data:

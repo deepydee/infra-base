@@ -11,6 +11,18 @@
     dest: /opt/stacks/monitoring/prometheus.yml
   register: prom_conf
 
+- name: Template Loki config
+  template:
+    src: loki-config.yaml.j2
+    dest: /opt/stacks/monitoring/loki-config.yaml
+  register: loki_conf
+
+- name: Template Promtail config
+  template:
+    src: promtail-config.yaml.j2
+    dest: /opt/stacks/monitoring/promtail-config.yaml
+  register: promtail_conf
+
 - name: Template Monitoring compose file
   template:
     src: monitoring-compose.yml.j2
@@ -19,4 +31,4 @@
 
 - name: Deploy Monitoring Stack
   command: docker stack deploy -c /opt/stacks/monitoring/docker-compose.yml monitoring
-  when: mon_stack_conf.changed or prom_conf.changed or force_redeploy | default(false)
+  when: mon_stack_conf.changed or prom_conf.changed or loki_conf.changed or promtail_conf.changed or force_redeploy | default(false)
