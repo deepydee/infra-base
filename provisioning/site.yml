@@ -7,5 +7,6 @@
     - common
     - security
     - docker
-    - stacks
+    - role: stacks
+      tags: [stack]
 

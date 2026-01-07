@@ -1,6 +1,8 @@
+version: '3.8'
+
 services:
   traefik:
-    image: traefik:latest
+    image: traefik:v2.11
     command:
       - "--api.dashboard=true"
       - "--providers.docker.swarmMode=true"
@@ -18,9 +20,11 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    environment:
+      DOCKER_API_VERSION: "1.44"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "./acme.json:/certs/acme.json"
+      - "/opt/stacks/traefik/acme.json:/certs/acme.json"
     networks:
       - traefik-public
     deploy:
@@ -36,6 +40,9 @@ services:
         - "traefik.http.routers.dashboard.tls.certresolver=letsEncrypt"
         - "traefik.http.routers.dashboard.middlewares=auth"
         - "traefik.http.middlewares.auth.basicauth.users={{ traefik_basic_auth | default('admin:$apr1$9E/....$....') }}"
+        - "traefik.http.services.dummy.loadbalancer.server.port=8080"
+        # Force redeploy on every ansible run
+        - "deployed_at={{ ansible_date_time.iso8601 }}"
 
 networks:
   traefik-public:

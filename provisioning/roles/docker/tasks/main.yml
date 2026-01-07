@@ -17,14 +17,21 @@
       - gnupg
     state: present
 
-- name: Add Docker GPG key
-  apt_key:
+- name: Create directory for apt keyrings
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Download Docker's official GPG key
+  get_url:
     url: https://download.docker.com/linux/debian/gpg
-    state: present
+    dest: /etc/apt/keyrings/docker.asc
+    mode: '0644'
 
 - name: Add Docker repository
   apt_repository:
-    repo: "deb [arch=amd64] https://download.docker.com/linux/debian bookworm stable"
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian bookworm stable"
     state: present
     filename: docker
 
@@ -36,7 +43,7 @@
       - containerd.io
       - docker-buildx-plugin
       - docker-compose-plugin
-      - python3-docker # Для работы ansible docker modules
+      - python3-docker # For Ansible docker modules
     state: present
     update_cache: yes
 
@@ -46,8 +53,14 @@
     state: started
     enabled: yes
 
+- name: Add deploy user to docker group
+  user:
+    name: "{{ create_user }}"
+    groups: docker
+    append: yes
+
 - name: Check Swarm status
-  command: docker info --format '{{.Swarm.LocalNodeState}}'
+  command: docker info --format '{% raw %}{{.Swarm.LocalNodeState}}{% endraw %}'
   register: swarm_status
   changed_when: false
 

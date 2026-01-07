@@ -2,7 +2,7 @@
 - name: Ensure deployment user exists
   user:
     name: "{{ create_user }}"
-    groups: sudo,docker
+    groups: sudo
     append: yes
     shell: /bin/bash
     state: present

@@ -7,10 +7,10 @@
   timezone:
     name: "{{ timezone }}"
 
-- name: Update apt cache
+- name: Force Update apt cache
   apt:
     update_cache: yes
-    cache_valid_time: 3600
+    # Removed cache_valid_time to force real update on fresh systems
 
 - name: Install basic utilities
   apt:
@@ -26,9 +26,8 @@
       - gnupg
       - lsb-release
       - ca-certificates
-      - software-properties-common
       - python3-pip
-      - python3-venv # For Ansible pip modules
+      - python3-venv
     state: present
 
 # Swap Configuration (8GB)

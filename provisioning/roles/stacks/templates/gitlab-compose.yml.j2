@@ -1,3 +1,4 @@
+version: '3.6'
 services:
   web:
     image: 'gitlab/gitlab-ce:latest'
@@ -44,12 +45,14 @@ services:
         - "traefik.http.routers.gitlab.rule=Host(`{{ gitlab_hostname }}`)"
         - "traefik.http.routers.gitlab.entrypoints=websecure"
         - "traefik.http.routers.gitlab.tls.certresolver=letsEncrypt"
-        - "traefik.http.services.gitlab.loadbalancer.server.port=80"
+        - "traefik.http.routers.gitlab.service=svc-gitlab-ui"
+        - "traefik.http.services.svc-gitlab-ui.loadbalancer.server.port=80"
         # Registry
         - "traefik.http.routers.gitlab-registry.rule=Host(`{{ registry_hostname }}`)"
         - "traefik.http.routers.gitlab-registry.entrypoints=websecure"
         - "traefik.http.routers.gitlab-registry.tls.certresolver=letsEncrypt"
-        - "traefik.http.services.gitlab-registry.loadbalancer.server.port=5005"
+        - "traefik.http.routers.gitlab-registry.service=svc-gitlab-reg"
+        - "traefik.http.services.svc-gitlab-reg.loadbalancer.server.port=5005"
 
 networks:
   traefik-public:
