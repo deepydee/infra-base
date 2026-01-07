@@ -1,6 +1,6 @@
 ---
 # System Settings
-hostname: "dev.saas4u.dev"
+hostname: "saas4u.dev"
 timezone: "UTC"
 create_user: "deploy" # Пользователь, под которым будем работать дальше
 create_user_key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}" # Твой локальный публичный ключ

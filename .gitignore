@@ -1,6 +1,7 @@
 # Ansible
 *.retry
 provisioning/inventory/hosts.yml
+provisioning/inventory/group_vars/all.yml
 provisioning/inventory/group_vars/vault.yml
 
 # Keys & Secrets
