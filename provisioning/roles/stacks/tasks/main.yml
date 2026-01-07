@@ -1,0 +1,19 @@
+---
+- name: Create stacks directory
+  file:
+    path: /opt/stacks
+    state: directory
+    mode: 0755
+
+- name: Deploy Traefik Stack
+  include_tasks: traefik.yml
+
+- name: Deploy Portainer Stack
+  include_tasks: portainer.yml
+
+- name: Deploy GitLab Stack
+  include_tasks: gitlab.yml
+
+- name: Deploy Monitoring Stack (Grafana/Prometheus)
+  include_tasks: monitoring.yml
+

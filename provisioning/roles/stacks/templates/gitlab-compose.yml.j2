@@ -1,0 +1,56 @@
+services:
+  web:
+    image: 'gitlab/gitlab-ce:latest'
+    hostname: '{{ gitlab_hostname }}'
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'https://{{ gitlab_hostname }}'
+        registry_external_url 'https://{{ registry_hostname }}'
+        gitlab_rails['initial_root_password'] = '{{ gitlab_root_password }}'
+        gitlab_rails['gitlab_shell_ssh_port'] = 2222
+        # Nginx configuration
+        nginx['listen_port'] = 80
+        nginx['listen_https'] = false
+        nginx['proxy_set_headers'] = {
+          "X-Forwarded-Proto" => "https",
+          "X-Forwarded-Ssl" => "on"
+        }
+        # Registry configuration
+        registry_nginx['listen_port'] = 5005
+        registry_nginx['listen_https'] = false
+        registry_nginx['proxy_set_headers'] = {
+          "X-Forwarded-Proto" => "https",
+          "X-Forwarded-Ssl" => "on"
+        }
+    networks:
+      - traefik-public
+    ports:
+      - "2222:22" # SSH passthrough
+    volumes:
+      - '/srv/gitlab/config:/etc/gitlab'
+      - '/srv/gitlab/logs:/var/log/gitlab'
+      - '/srv/gitlab/data:/var/opt/gitlab'
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.role == manager]
+      resources:
+        limits:
+          memory: 8G
+      labels:
+        - "traefik.enable=true"
+        # GitLab UI
+        - "traefik.http.routers.gitlab.rule=Host(`{{ gitlab_hostname }}`)"
+        - "traefik.http.routers.gitlab.entrypoints=websecure"
+        - "traefik.http.routers.gitlab.tls.certresolver=letsEncrypt"
+        - "traefik.http.services.gitlab.loadbalancer.server.port=80"
+        # Registry
+        - "traefik.http.routers.gitlab-registry.rule=Host(`{{ registry_hostname }}`)"
+        - "traefik.http.routers.gitlab-registry.entrypoints=websecure"
+        - "traefik.http.routers.gitlab-registry.tls.certresolver=letsEncrypt"
+        - "traefik.http.services.gitlab-registry.loadbalancer.server.port=5005"
+
+networks:
+  traefik-public:
+    external: true

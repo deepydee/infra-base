@@ -1,0 +1,23 @@
+# Ansible
+*.retry
+provisioning/inventory/hosts.yml
+provisioning/inventory/group_vars/vault.yml
+
+# Keys & Secrets
+*.pem
+*.key
+files/deploy_rsa*
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Project specific
+.gemini/
+.env

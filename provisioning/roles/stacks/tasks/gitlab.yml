@@ -1,0 +1,21 @@
+---
+- name: Create GitLab directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+  loop:
+    - /opt/stacks/gitlab
+    - /srv/gitlab/config
+    - /srv/gitlab/data
+    - /srv/gitlab/logs
+
+- name: Template GitLab compose file
+  template:
+    src: gitlab-compose.yml.j2
+    dest: /opt/stacks/gitlab/docker-compose.yml
+  register: gitlab_config
+
+- name: Deploy GitLab Stack
+  command: docker stack deploy -c /opt/stacks/gitlab/docker-compose.yml gitlab
+  when: gitlab_config.changed or force_redeploy | default(false)

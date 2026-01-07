@@ -1,0 +1,62 @@
+---
+- name: Uninstall old versions
+  apt:
+    name:
+      - docker
+      - docker-engine
+      - docker.io
+      - containerd
+      - runc
+    state: absent
+
+- name: Install required packages
+  apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+    state: present
+
+- name: Add Docker GPG key
+  apt_key:
+    url: https://download.docker.com/linux/debian/gpg
+    state: present
+
+- name: Add Docker repository
+  apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/debian bookworm stable"
+    state: present
+    filename: docker
+
+- name: Install Docker CE
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+      - python3-docker # Для работы ansible docker modules
+    state: present
+    update_cache: yes
+
+- name: Ensure Docker service is running
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Check Swarm status
+  command: docker info --format '{{.Swarm.LocalNodeState}}'
+  register: swarm_status
+  changed_when: false
+
+- name: Init Swarm
+  command: docker swarm init --advertise-addr {{ ansible_default_ipv4.address }}
+  when: swarm_status.stdout != "active"
+
+- name: Create overlay network for Traefik
+  docker_network:
+    name: traefik-public
+    driver: overlay
+    attachable: yes

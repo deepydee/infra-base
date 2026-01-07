@@ -1,0 +1,17 @@
+---
+- name: Bootstrap Server (Initial Setup)
+  hosts: all
+  remote_user: root # Предполагаем, что изначально у нас root доступ (или переопредели в hosts.yml)
+  gather_facts: yes
+
+  vars:
+    ansible_port: 22 # Явно указываем стандартный порт для первого входа
+
+  roles:
+    - common
+    - security
+
+  tasks:
+    - name: Final Warning
+      debug:
+        msg: "Setup complete. SSH port has been changed to {{ ssh_port }}. Next time use 'make deploy'."

@@ -1,0 +1,22 @@
+---
+- name: Create Traefik directory
+  file:
+    path: /opt/stacks/traefik
+    state: directory
+    mode: 0755
+
+- name: Create acme.json file
+  file:
+    path: /opt/stacks/traefik/acme.json
+    state: touch
+    mode: 0600
+
+- name: Template Traefik compose file
+  template:
+    src: traefik-compose.yml.j2
+    dest: /opt/stacks/traefik/docker-compose.yml
+  register: traefik_config
+
+- name: Deploy Traefik Stack
+  command: docker stack deploy -c /opt/stacks/traefik/docker-compose.yml traefik
+  when: traefik_config.changed or force_redeploy | default(false)

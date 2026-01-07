@@ -1,0 +1,16 @@
+---
+- name: Create Portainer directory
+  file:
+    path: /opt/stacks/portainer
+    state: directory
+    mode: 0755
+
+- name: Template Portainer compose file
+  template:
+    src: portainer-compose.yml.j2
+    dest: /opt/stacks/portainer/docker-compose.yml
+  register: portainer_config
+
+- name: Deploy Portainer Stack
+  command: docker stack deploy -c /opt/stacks/portainer/docker-compose.yml portainer
+  when: portainer_config.changed or force_redeploy | default(false)

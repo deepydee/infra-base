@@ -1,0 +1,11 @@
+---
+- name: Provision Development Server
+  hosts: all
+  become: yes # Выполнять через sudo
+  
+  roles:
+    - common
+    - security
+    - docker
+    - stacks
+

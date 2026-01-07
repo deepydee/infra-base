@@ -1,0 +1,69 @@
+---
+- name: Set hostname
+  hostname:
+    name: "{{ hostname }}"
+
+- name: Set timezone
+  timezone:
+    name: "{{ timezone }}"
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install basic utilities
+  apt:
+    name:
+      - curl
+      - wget
+      - git
+      - htop
+      - vim
+      - ncdu
+      - ufw
+      - fail2ban
+      - gnupg
+      - lsb-release
+      - ca-certificates
+      - software-properties-common
+      - python3-pip
+      - python3-venv # For Ansible pip modules
+    state: present
+
+# Swap Configuration (4GB)
+- name: Check if swap file exists
+  stat:
+    path: /swapfile
+  register: swap_file_check
+
+- name: Create swap file
+  command: fallocate -l 4G /swapfile
+  when: not swap_file_check.stat.exists
+
+- name: Set permissions on swap file
+  file:
+    path: /swapfile
+    mode: 0600
+
+- name: Make swap
+  command: mkswap /swapfile
+  when: not swap_file_check.stat.exists
+
+- name: Add swap to fstab
+  mount:
+    path: none
+    src: /swapfile
+    fstype: swap
+    opts: sw
+    state: present
+
+- name: Turn on swap
+  command: swapon /swapfile
+  when: not swap_file_check.stat.exists
+
+- name: Set swapiness
+  sysctl:
+    name: vm.swappiness
+    value: '10'
+    state: present

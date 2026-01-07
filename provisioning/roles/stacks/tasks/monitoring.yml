@@ -1,0 +1,22 @@
+---
+- name: Create Monitoring directory
+  file:
+    path: /opt/stacks/monitoring
+    state: directory
+    mode: 0755
+
+- name: Template Prometheus config
+  template:
+    src: prometheus.yml.j2
+    dest: /opt/stacks/monitoring/prometheus.yml
+  register: prom_conf
+
+- name: Template Monitoring compose file
+  template:
+    src: monitoring-compose.yml.j2
+    dest: /opt/stacks/monitoring/docker-compose.yml
+  register: mon_stack_conf
+
+- name: Deploy Monitoring Stack
+  command: docker stack deploy -c /opt/stacks/monitoring/docker-compose.yml monitoring
+  when: mon_stack_conf.changed or prom_conf.changed or force_redeploy | default(false)
