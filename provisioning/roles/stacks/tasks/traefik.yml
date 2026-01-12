@@ -19,4 +19,4 @@
 
 - name: Deploy Traefik Stack
   command: docker stack deploy -c /opt/stacks/traefik/docker-compose.yml traefik
-  when: traefik_config.changed or force_redeploy | default(false)
+  when: traefik_config.changed or (force_redeploy | default(false) | bool)

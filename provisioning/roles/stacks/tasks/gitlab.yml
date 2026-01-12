@@ -18,4 +18,4 @@
 
 - name: Deploy GitLab Stack
   command: docker stack deploy -c /opt/stacks/gitlab/docker-compose.yml gitlab
-  when: gitlab_config.changed or force_redeploy | default(false)
+  when: gitlab_config.changed or (force_redeploy | default(false) | bool)

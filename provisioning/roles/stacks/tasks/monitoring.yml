@@ -31,4 +31,4 @@
 
 - name: Deploy Monitoring Stack
   command: docker stack deploy -c /opt/stacks/monitoring/docker-compose.yml monitoring
-  when: mon_stack_conf.changed or prom_conf.changed or loki_conf.changed or promtail_conf.changed or force_redeploy | default(false)
+  when: mon_stack_conf.changed or prom_conf.changed or loki_conf.changed or promtail_conf.changed or (force_redeploy | default(false) | bool)
