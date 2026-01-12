@@ -10,6 +10,8 @@ services:
       - "--providers.docker.network=traefik-public"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.websecure.http.sanitizepath=true"
+      - "--entrypoints.websecure.http.encodedcharacters.allowencodedslash=true"
       - "--certificatesresolvers.letsEncrypt.acme.httpchallenge=true"
       - "--certificatesresolvers.letsEncrypt.acme.httpchallenge.entrypoint=web"
       - "--certificatesresolvers.letsEncrypt.acme.email={{ email_admin }}"

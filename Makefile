@@ -1,4 +1,4 @@
-.PHONY: bootstrap deploy ping vault-encrypt vault-edit
+.PHONY: bootstrap deploy ping vault-encrypt vault-edit deploy-stacks deploy-stacks-force
 
 # Переменные по умолчанию (можно переопределить: make deploy TAG=v1.0)
 TAG ?= latest
@@ -18,6 +18,9 @@ deploy:
 # Обновление только конфигураций стеков (быстрый деплой)
 deploy-stacks:
 	ansible-playbook provisioning/site.yml --tags "stack"
+
+deploy-stacks-force:
+	ansible-playbook provisioning/site.yml --tags "stack" -e force_redeploy=true
 
 # Утилиты для шифрования секретов (если понадобятся)
 vault-encrypt:

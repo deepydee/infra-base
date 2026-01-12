@@ -58,6 +58,12 @@
     port: 443
     proto: tcp
 
+- name: Allow GitLab Container Registry
+  ufw:
+    rule: allow
+    port: 5050
+    proto: tcp
+
 - name: Enable UFW
   ufw:
     state: enabled
