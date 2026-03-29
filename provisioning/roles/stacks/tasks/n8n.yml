@@ -1,0 +1,75 @@
+---
+- name: Validate n8n configuration
+  assert:
+    that:
+      - n8n_encryption_key | length > 31
+      - n8n_db_type in ['sqlite', 'postgresdb']
+      - n8n_execution_mode in ['regular', 'queue']
+      - n8n_binary_data_mode in ['filesystem', 'database', 's3']
+    fail_msg: "Set n8n_encryption_key to a random string at least 32 characters long before enabling n8n deployment"
+  when: n8n_enabled | bool
+
+- name: Validate n8n PostgreSQL configuration
+  assert:
+    that:
+      - n8n_postgres_password | length > 0
+      - n8n_postgres_database | length > 0
+      - n8n_postgres_user | length > 0
+      - n8n_postgres_schema | length > 0
+    fail_msg: "Set n8n_postgres_password, n8n_postgres_database, n8n_postgres_user and n8n_postgres_schema before enabling PostgreSQL for n8n"
+  when:
+    - n8n_enabled | bool
+    - n8n_db_type == 'postgresdb'
+
+- name: Validate n8n queue mode configuration
+  assert:
+    that:
+      - n8n_db_type == 'postgresdb'
+      - n8n_binary_data_mode != 'filesystem'
+      - n8n_worker_replicas | int > 0
+    fail_msg: "Queue mode for n8n requires PostgreSQL, at least one worker replica and binary data mode different from filesystem"
+  when:
+    - n8n_enabled | bool
+    - n8n_execution_mode == 'queue'
+
+- name: Validate n8n S3 external storage configuration
+  assert:
+    that:
+      - n8n_external_storage_s3_host | length > 0
+      - n8n_external_storage_s3_bucket_name | length > 0
+      - n8n_external_storage_s3_bucket_region | length > 0
+      - n8n_external_storage_s3_access_key | length > 0
+      - n8n_external_storage_s3_access_secret | length > 0
+    fail_msg: "Set n8n_external_storage_s3_host, n8n_external_storage_s3_bucket_name, n8n_external_storage_s3_bucket_region, n8n_external_storage_s3_access_key and n8n_external_storage_s3_access_secret before enabling S3 binary storage for n8n"
+  when:
+    - n8n_enabled | bool
+    - n8n_binary_data_mode == 's3'
+
+- name: Create n8n stack directory
+  file:
+    path: /opt/stacks/n8n
+    state: directory
+    mode: 0755
+  when: n8n_enabled | bool
+
+- name: Create n8n data directory
+  file:
+    path: /srv/n8n
+    state: directory
+    owner: "1000"
+    group: "1000"
+    mode: 0755
+  when: n8n_enabled | bool
+
+- name: Template n8n compose file
+  template:
+    src: n8n-compose.yml.j2
+    dest: /opt/stacks/n8n/docker-compose.yml
+  register: n8n_config
+  when: n8n_enabled | bool
+
+- name: Deploy n8n Stack
+  command: docker stack deploy -c /opt/stacks/n8n/docker-compose.yml n8n
+  when:
+    - n8n_enabled | bool
+    - n8n_config.changed or (force_redeploy | default(false) | bool)

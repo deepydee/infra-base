@@ -33,4 +33,24 @@ gitlab_root_password: "change_me_immediately_123"
 # Monitoring Settings
 grafana_admin_password: "change_me_grafana_123"
 
+n8n_enabled: false
+n8n_hostname: "n8n.{{ domain_root }}"
+n8n_encryption_key: "change_me_to_a_long_random_string_at_least_32_chars"
+n8n_db_type: "postgresdb"
+n8n_execution_mode: "queue"
+n8n_binary_data_mode: "s3"
+n8n_external_storage_s3_host: "<account_id>.r2.cloudflarestorage.com"
+n8n_external_storage_s3_bucket_name: "change_me_n8n_binary_data"
+n8n_external_storage_s3_bucket_region: "auto"
+n8n_external_storage_s3_access_key: "change_me_r2_access_key"
+n8n_external_storage_s3_access_secret: "change_me_r2_access_secret"
+n8n_postgres_host: "postgres"
+n8n_postgres_port: 5432
+n8n_postgres_database: "n8n"
+n8n_postgres_user: "n8n"
+n8n_postgres_password: "change_me_postgres_password"
+n8n_postgres_schema: "public"
+n8n_redis_password: "change_me_redis_password"
+n8n_worker_replicas: 1
+
 

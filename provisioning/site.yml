@@ -2,6 +2,25 @@
 - name: Provision Development Server
   hosts: all
   become: yes # Выполнять через sudo
+ 
+  pre_tasks:
+    - name: Check if local vault variables file exists
+      stat:
+        path: "{{ playbook_dir }}/inventory/group_vars/vault.yml"
+      register: local_vault_vars
+      delegate_to: localhost
+      become: false
+      run_once: true
+      tags: [always]
+
+    - name: Load local vault variables
+      include_vars:
+        file: "{{ playbook_dir }}/inventory/group_vars/vault.yml"
+      when: local_vault_vars.stat.exists
+      delegate_to: localhost
+      become: false
+      run_once: true
+      tags: [always]
   
   roles:
     - common

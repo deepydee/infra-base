@@ -1,0 +1,181 @@
+version: '3.8'
+
+services:
+{% if n8n_db_type == 'postgresdb' %}
+  postgres:
+    image: {{ n8n_postgres_image }}
+    environment:
+      POSTGRES_DB: "{{ n8n_postgres_database }}"
+      POSTGRES_USER: "{{ n8n_postgres_user }}"
+      POSTGRES_PASSWORD: "{{ n8n_postgres_password }}"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - n8n-backend
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.role == manager]
+
+{% endif %}
+{% if n8n_execution_mode == 'queue' %}
+  redis:
+    image: {{ n8n_redis_image }}
+{% if n8n_redis_password | length > 0 %}
+    command: redis-server --appendonly yes --requirepass {{ n8n_redis_password }}
+{% else %}
+    command: redis-server --appendonly yes
+{% endif %}
+    volumes:
+      - redis_data:/data
+    networks:
+      - n8n-backend
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.role == manager]
+
+{% endif %}
+  n8n:
+    image: {{ n8n_image }}
+    environment:
+      N8N_HOST: "{{ n8n_hostname }}"
+      N8N_PROTOCOL: "https"
+      N8N_PORT: "5678"
+      N8N_EDITOR_BASE_URL: "{{ n8n_editor_base_url }}"
+      WEBHOOK_URL: "{{ n8n_webhook_url }}"
+{% if n8n_license_activation_key | length > 0 %}
+      N8N_LICENSE_ACTIVATION_KEY: "{{ n8n_license_activation_key }}"
+{% endif %}
+      N8N_ENCRYPTION_KEY: "{{ n8n_encryption_key }}"
+      NODE_ENV: "production"
+      TZ: "{{ n8n_timezone }}"
+      GENERIC_TIMEZONE: "{{ n8n_timezone }}"
+      N8N_SECURE_COOKIE: "true"
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+      N8N_DEFAULT_BINARY_DATA_MODE: "{{ n8n_binary_data_mode }}"
+{% if n8n_binary_data_mode == 's3' %}
+      N8N_EXTERNAL_STORAGE_S3_HOST: "{{ n8n_external_storage_s3_host }}"
+      N8N_EXTERNAL_STORAGE_S3_BUCKET_NAME: "{{ n8n_external_storage_s3_bucket_name }}"
+      N8N_EXTERNAL_STORAGE_S3_BUCKET_REGION: "{{ n8n_external_storage_s3_bucket_region }}"
+      N8N_EXTERNAL_STORAGE_S3_ACCESS_KEY: "{{ n8n_external_storage_s3_access_key }}"
+      N8N_EXTERNAL_STORAGE_S3_ACCESS_SECRET: "{{ n8n_external_storage_s3_access_secret }}"
+{% endif %}
+      EXECUTIONS_DATA_SAVE_ON_ERROR: "{{ n8n_executions_data_save_on_error }}"
+      EXECUTIONS_DATA_SAVE_ON_SUCCESS: "{{ n8n_executions_data_save_on_success }}"
+      EXECUTIONS_DATA_SAVE_ON_PROGRESS: "{{ 'true' if n8n_executions_data_save_on_progress else 'false' }}"
+      EXECUTIONS_DATA_SAVE_MANUAL_EXECUTIONS: "{{ 'true' if n8n_executions_data_save_manual_executions else 'false' }}"
+{% if n8n_db_type == 'postgresdb' %}
+      DB_TYPE: "postgresdb"
+      DB_POSTGRESDB_HOST: "{{ n8n_postgres_host }}"
+      DB_POSTGRESDB_PORT: "{{ n8n_postgres_port }}"
+      DB_POSTGRESDB_DATABASE: "{{ n8n_postgres_database }}"
+      DB_POSTGRESDB_USER: "{{ n8n_postgres_user }}"
+      DB_POSTGRESDB_PASSWORD: "{{ n8n_postgres_password }}"
+      DB_POSTGRESDB_SCHEMA: "{{ n8n_postgres_schema }}"
+{% endif %}
+{% if n8n_execution_mode == 'queue' %}
+      EXECUTIONS_MODE: "queue"
+      OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS: "{{ 'true' if n8n_offload_manual_executions_to_workers else 'false' }}"
+      QUEUE_BULL_REDIS_HOST: "{{ n8n_redis_host }}"
+      QUEUE_BULL_REDIS_PORT: "{{ n8n_redis_port }}"
+      QUEUE_BULL_REDIS_DB: "{{ n8n_redis_db }}"
+      QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD: "{{ n8n_queue_timeout_threshold }}"
+      N8N_GRACEFUL_SHUTDOWN_TIMEOUT: "{{ n8n_graceful_shutdown_timeout }}"
+      QUEUE_HEALTH_CHECK_ACTIVE: "{{ 'true' if n8n_queue_health_check_active else 'false' }}"
+      N8N_ENDPOINT_HEALTH: "{{ n8n_endpoint_health }}"
+{% if n8n_redis_password | length > 0 %}
+      QUEUE_BULL_REDIS_PASSWORD: "{{ n8n_redis_password }}"
+{% endif %}
+{% endif %}
+    volumes:
+      - /srv/n8n:/home/node/.n8n
+    networks:
+      - traefik-public
+{% if n8n_db_type == 'postgresdb' or n8n_execution_mode == 'queue' %}
+      - n8n-backend
+{% endif %}
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.role == manager]
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.n8n.rule=Host(`{{ n8n_hostname }}`)"
+        - "traefik.http.routers.n8n.entrypoints=websecure"
+        - "traefik.http.routers.n8n.tls.certresolver=letsEncrypt"
+        - "traefik.http.services.n8n.loadbalancer.server.port=5678"
+
+{% if n8n_execution_mode == 'queue' %}
+  n8n-worker:
+    image: {{ n8n_image }}
+    command: worker
+    environment:
+{% if n8n_license_activation_key | length > 0 %}
+      N8N_LICENSE_ACTIVATION_KEY: "{{ n8n_license_activation_key }}"
+{% endif %}
+      N8N_ENCRYPTION_KEY: "{{ n8n_encryption_key }}"
+      NODE_ENV: "production"
+      TZ: "{{ n8n_timezone }}"
+      GENERIC_TIMEZONE: "{{ n8n_timezone }}"
+      N8N_DEFAULT_BINARY_DATA_MODE: "{{ n8n_binary_data_mode }}"
+{% if n8n_binary_data_mode == 's3' %}
+      N8N_EXTERNAL_STORAGE_S3_HOST: "{{ n8n_external_storage_s3_host }}"
+      N8N_EXTERNAL_STORAGE_S3_BUCKET_NAME: "{{ n8n_external_storage_s3_bucket_name }}"
+      N8N_EXTERNAL_STORAGE_S3_BUCKET_REGION: "{{ n8n_external_storage_s3_bucket_region }}"
+      N8N_EXTERNAL_STORAGE_S3_ACCESS_KEY: "{{ n8n_external_storage_s3_access_key }}"
+      N8N_EXTERNAL_STORAGE_S3_ACCESS_SECRET: "{{ n8n_external_storage_s3_access_secret }}"
+{% endif %}
+      EXECUTIONS_DATA_SAVE_ON_ERROR: "{{ n8n_executions_data_save_on_error }}"
+      EXECUTIONS_DATA_SAVE_ON_SUCCESS: "{{ n8n_executions_data_save_on_success }}"
+      EXECUTIONS_DATA_SAVE_ON_PROGRESS: "{{ 'true' if n8n_executions_data_save_on_progress else 'false' }}"
+      EXECUTIONS_DATA_SAVE_MANUAL_EXECUTIONS: "{{ 'true' if n8n_executions_data_save_manual_executions else 'false' }}"
+      DB_TYPE: "postgresdb"
+      DB_POSTGRESDB_HOST: "{{ n8n_postgres_host }}"
+      DB_POSTGRESDB_PORT: "{{ n8n_postgres_port }}"
+      DB_POSTGRESDB_DATABASE: "{{ n8n_postgres_database }}"
+      DB_POSTGRESDB_USER: "{{ n8n_postgres_user }}"
+      DB_POSTGRESDB_PASSWORD: "{{ n8n_postgres_password }}"
+      DB_POSTGRESDB_SCHEMA: "{{ n8n_postgres_schema }}"
+      EXECUTIONS_MODE: "queue"
+      OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS: "{{ 'true' if n8n_offload_manual_executions_to_workers else 'false' }}"
+      QUEUE_BULL_REDIS_HOST: "{{ n8n_redis_host }}"
+      QUEUE_BULL_REDIS_PORT: "{{ n8n_redis_port }}"
+      QUEUE_BULL_REDIS_DB: "{{ n8n_redis_db }}"
+      QUEUE_BULL_REDIS_TIMEOUT_THRESHOLD: "{{ n8n_queue_timeout_threshold }}"
+      N8N_GRACEFUL_SHUTDOWN_TIMEOUT: "{{ n8n_graceful_shutdown_timeout }}"
+      QUEUE_HEALTH_CHECK_ACTIVE: "{{ 'true' if n8n_queue_health_check_active else 'false' }}"
+      N8N_ENDPOINT_HEALTH: "{{ n8n_endpoint_health }}"
+{% if n8n_redis_password | length > 0 %}
+      QUEUE_BULL_REDIS_PASSWORD: "{{ n8n_redis_password }}"
+{% endif %}
+    networks:
+      - n8n-backend
+    deploy:
+      mode: replicated
+      replicas: {{ n8n_worker_replicas }}
+      placement:
+        constraints: [node.role == manager]
+{% endif %}
+
+networks:
+  traefik-public:
+    external: true
+{% if n8n_db_type == 'postgresdb' or n8n_execution_mode == 'queue' %}
+  n8n-backend:
+    driver: overlay
+    attachable: true
+{% endif %}
+
+{% if n8n_db_type == 'postgresdb' or n8n_execution_mode == 'queue' %}
+volumes:
+{% if n8n_db_type == 'postgresdb' %}
+  postgres_data:
+{% endif %}
+{% if n8n_execution_mode == 'queue' %}
+  redis_data:
+{% endif %}
+{% endif %}

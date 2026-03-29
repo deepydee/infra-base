@@ -14,6 +14,9 @@
 - name: Deploy GitLab Stack
   include_tasks: gitlab.yml
 
+- name: Deploy n8n Stack
+  include_tasks: n8n.yml
+
 - name: Deploy Monitoring Stack (Grafana/Prometheus)
   include_tasks: monitoring.yml
 
